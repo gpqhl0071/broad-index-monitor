@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>国内宽指基金 · 实时行情</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <h1>国内宽指基金</h1>
+      <p class="subtitle">A 股宽基 + 美股/港股 QDII ETF · 每 10 秒自动刷新</p>
+    </div>
+    <div class="weather-widget" id="weatherWidget" aria-label="天气预报">
+      <button type="button" class="weather-toggle" id="weatherToggle" aria-expanded="false" aria-controls="weatherPanel">
+        <span class="weather-summary" id="weatherSummary"><span class="weather-summary-text">定位天气…</span></span>
+        <span class="weather-chevron" aria-hidden="true">▾</span>
+      </button>
+      <div class="weather-panel" id="weatherPanel" hidden>
+        <div class="weather-days" id="weatherDays"></div>
+      </div>
+    </div>
+    <div class="status-toolbar" id="statusBar">
+      <button type="button" class="btn-refresh" id="statusRefreshBtn" title="立即刷新行情" aria-label="立即刷新行情">
+        <svg class="btn-refresh-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/>
+        </svg>
+        <span class="btn-refresh-text">立即刷新</span>
+      </button>
+      <div class="status-panel">
+        <div class="status-live" id="statusLive">
+          <span class="status-dot" id="statusDot"></span>
+          <span class="status-live-label" id="statusLiveLabel">连接中</span>
+        </div>
+        <div class="status-grid">
+          <div class="status-item">
+            <span class="status-item-label">最近更新</span>
+            <span class="status-item-value" id="statusUpdatedAt">—</span>
+          </div>
+          <div class="status-item">
+            <span class="status-item-label">数据源</span>
+            <span class="status-item-value" id="statusSource">—</span>
+          </div>
+          <div class="status-item">
+            <span class="status-item-label">自动刷新</span>
+            <span class="status-item-value" id="statusInterval">每 10 秒</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="table-wrap">
+      <table class="quote-table">
+        <thead>
+          <tr>
+            <th>跟踪指数</th>
+            <th>基金简称</th>
+            <th>代码</th>
+            <th class="num">涨跌幅</th>
+            <th class="num">最新价</th>
+            <th class="num">涨跌额</th>
+            <th class="num">今开</th>
+            <th class="num">昨收</th>
+            <th class="num">成交额</th>
+            <th class="num">振幅</th>
+          </tr>
+        </thead>
+        <tbody id="quoteBody">
+          <tr><td colspan="10" class="loading">加载行情数据…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <footer class="footer">
+      <span>数据来源：东方财富(4节点) / 新浪 / 腾讯(2通道) · 8 源轮询</span>
+      <span id="fetchMeta"></span>
+    </footer>
+  </main>
+
+  <div id="historyPopup" class="history-popup" role="tooltip" aria-hidden="true" hidden>
+    <div class="history-popup-inner">
+      <div class="history-popup-head">
+        <span class="history-popup-title" id="historyTitle">—</span>
+        <span class="history-popup-sub" id="historySub">最近 7 个交易日</span>
+      </div>
+      <div class="history-popup-body" id="historyBody"></div>
+    </div>
+  </div>
+
+  <script src="/static/weather.js"></script>
+  <script src="/static/history.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
