@@ -3,6 +3,8 @@ const REFRESH_MS = 10_000;
 const GROUP_LABELS = { sh: "上证", sz: "深证", kc: "科创", us: "美股", hk: "港股" };
 const GROUP_ORDER = ["sh", "sz", "kc", "us", "hk"];
 
+const RISK_LABELS = { low: "低风险", medium: "中风险", high: "高风险", unknown: "—" };
+
 const fmtPrice = (v, kind) => {
   if (v == null || v === "-") return "—";
   const digits = kind === "index" ? 2 : 3;
@@ -37,23 +39,45 @@ function pctClass(v) {
   return "flat";
 }
 
+function signalClass(signal) {
+  const map = {
+    buy: "signal-buy",
+    hold: "signal-hold",
+    watch: "signal-watch",
+    caution: "signal-caution",
+    sell: "signal-caution",
+    unknown: "signal-unknown",
+  };
+  return map[signal] || "signal-unknown";
+}
+
 function renderRow(row) {
   const cls = pctClass(row.change_pct);
   const isIndex = row.kind === "index";
   const rowCls = isIndex ? "row-index" : "";
-  const typeLabel = isIndex ? "大盘指数" : "场内ETF";
+  const typeLabel = isIndex ? "指数" : "ETF";
+  const a = row.analysis || {};
+  const sigCls = signalClass(a.signal);
   return `
     <tr class="quote-row ${rowCls}" data-code="${row.code}" data-kind="${row.kind}" data-name="${row.name}">
-      <td><span class="type-tag ${isIndex ? "tag-index" : "tag-fund"}">${typeLabel}</span> ${row.index_name}</td>
-      <td title="${row.full_name || ""}">${row.name}</td>
-      <td>${row.code}</td>
+      <td class="index-cell">
+        <span class="type-tag ${isIndex ? "tag-index" : "tag-fund"}">${typeLabel}</span>
+        <span class="index-name">${row.index_name}</span>
+      </td>
+      <td class="fund-name-cell">
+        <button type="button" class="fund-name-link"
+          data-code="${row.code}"
+          data-kind="${row.kind}"
+          data-exchange="${row.exchange || ""}"
+          data-name="${(row.name || "").replace(/"/g, "&quot;")}"
+          title="查看第三方详情页：${row.full_name || row.name}">${row.name}</button>
+      </td>
       <td class="num ${cls}">${fmtPct(row.change_pct)}</td>
+      <td>${row.code}</td>
       <td class="num ${cls}">${fmtPrice(row.price, row.kind)}</td>
+      <td class="trend-cell">${a.trend_text || "—"}</td>
+      <td class="signal-cell"><span class="signal-tag ${sigCls}">${a.icon || ""}${a.signal_text || "—"}</span></td>
       <td class="num ${cls}">${fmtAmt(row.change_amt, row.kind)}</td>
-      <td class="num">${fmtPrice(row.open, row.kind)}</td>
-      <td class="num">${fmtPrice(row.pre_close, row.kind)}</td>
-      <td class="num">${fmtAmount(row.amount)}</td>
-      <td class="num">${row.amplitude != null ? Number(row.amplitude).toFixed(2) + "%" : "—"}</td>
     </tr>
   `;
 }
@@ -61,7 +85,7 @@ function renderRow(row) {
 function renderRows(items) {
   const tbody = document.getElementById("quoteBody");
   if (!items.length) {
-    tbody.innerHTML = '<tr><td colspan="10" class="loading">暂无数据</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="loading">暂无数据</td></tr>';
     return;
   }
 
@@ -77,10 +101,11 @@ function renderRows(items) {
     if (!rows?.length) continue;
     const label = GROUP_LABELS[g] || g;
     const count = rows.length;
-    html += `<tr class="group-header group-${g}"><td colspan="10">${label}<span class="group-count">${count} 只</span></td></tr>`;
+    html += `<tr class="group-header group-${g}"><td colspan="8">${label}<span class="group-count">${count} 只</span></td></tr>`;
     html += rows.map(renderRow).join("");
   }
   tbody.innerHTML = html;
+  if (window.FundLinks) window.FundLinks.hideMenu();
   if (window.HistoryPanel) window.HistoryPanel.bindRows();
 }
 

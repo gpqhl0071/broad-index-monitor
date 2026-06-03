@@ -57,20 +57,18 @@
       <table class="quote-table">
         <thead>
           <tr>
-            <th>跟踪指数</th>
-            <th>基金简称</th>
+            <th class="col-index">跟踪指数</th>
+            <th class="col-name">基金简称</th>
+            <th class="num col-pct">涨跌幅</th>
             <th>代码</th>
-            <th class="num">涨跌幅</th>
             <th class="num">最新价</th>
+            <th>趋势</th>
+            <th>建议</th>
             <th class="num">涨跌额</th>
-            <th class="num">今开</th>
-            <th class="num">昨收</th>
-            <th class="num">成交额</th>
-            <th class="num">振幅</th>
           </tr>
         </thead>
         <tbody id="quoteBody">
-          <tr><td colspan="10" class="loading">加载行情数据…</td></tr>
+          <tr><td colspan="8" class="loading">加载行情数据…</td></tr>
         </tbody>
       </table>
     </div>
@@ -80,17 +78,31 @@
     </footer>
   </main>
 
+  <div id="fundLinkMenu" class="fund-link-menu" role="menu" aria-hidden="true" hidden>
+    <div class="fund-link-menu-head" id="fundLinkMenuTitle">—</div>
+    <ul class="fund-link-menu-list" id="fundLinkMenuList"></ul>
+  </div>
+
   <div id="historyPopup" class="history-popup" role="tooltip" aria-hidden="true" hidden>
     <div class="history-popup-inner">
       <div class="history-popup-head">
         <span class="history-popup-title" id="historyTitle">—</span>
         <span class="history-popup-sub" id="historySub">最近 7 个交易日</span>
       </div>
+      <div class="analysis-section" id="analysisSection" hidden>
+        <div class="analysis-bar">
+          <span class="analysis-signal" id="analysisSignal">—</span>
+          <span class="analysis-risk" id="analysisRisk">—</span>
+        </div>
+        <div class="analysis-summary" id="analysisSummary">—</div>
+        <ul class="analysis-details" id="analysisDetails"></ul>
+      </div>
       <div class="history-popup-body" id="historyBody"></div>
     </div>
   </div>
 
   <script src="/static/weather.js"></script>
+  <script src="/static/fund-links.js"></script>
   <script src="/static/history.js"></script>
   <script src="/static/app.js"></script>
 </body>

@@ -23,6 +23,7 @@ def sort_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def build_base_row(item: QuoteItem, *, full_name: str | None = None) -> dict[str, Any]:
     return {
         "code": item.code,
+        "exchange": market_prefix(item),
         "group": item.group,
         "kind": item.kind,
         "name": item.name,

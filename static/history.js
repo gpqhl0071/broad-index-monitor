@@ -9,13 +9,20 @@
   const subEl = document.getElementById("historySub");
   const bodyEl = document.getElementById("historyBody");
   const tbody = document.getElementById("quoteBody");
+  const analysisSection = document.getElementById("analysisSection");
+  const analysisSignal = document.getElementById("analysisSignal");
+  const analysisRisk = document.getElementById("analysisRisk");
+  const analysisSummary = document.getElementById("analysisSummary");
+  const analysisDetails = document.getElementById("analysisDetails");
 
   const cache = new Map();
+  const analysisCache = new Map();
   let showTimer = null;
   let hideTimer = null;
   let activeRow = null;
   let activeCode = null;
   let loadingCode = null;
+  let loadingAnalysisCode = null;
 
   const fmtPrice = (v, kind) => {
     if (v == null) return "—";
@@ -84,6 +91,30 @@
     titleEl.textContent = name || "—";
     subEl.textContent = `最近 ${DAYS} 个交易日`;
     bodyEl.innerHTML = '<div class="history-loading">加载中…</div>';
+    analysisSection.hidden = true;
+    analysisSignal.textContent = "—";
+    analysisRisk.textContent = "—";
+    analysisSummary.textContent = "—";
+    analysisDetails.innerHTML = "";
+  }
+
+  function renderAnalysis(data) {
+    if (!data || !data.signal) {
+      analysisSection.hidden = true;
+      return;
+    }
+    const riskText = { low: "低风险", medium: "中风险", high: "高风险", unknown: "—" };
+    analysisSignal.textContent = `${data.icon || ""} ${data.signal_text || "—"}`;
+    analysisRisk.textContent = riskText[data.risk] || "—";
+    analysisRisk.className = "analysis-risk risk-" + (data.risk || "unknown");
+    analysisSummary.textContent = data.summary || "—";
+    const details = data.details || [];
+    if (details.length) {
+      analysisDetails.innerHTML = details.map((d) => `<li>${d}</li>`).join("");
+    } else {
+      analysisDetails.innerHTML = '<li class="analysis-muted">历史数据不足，仅基于当日行情判断</li>';
+    }
+    analysisSection.hidden = false;
   }
 
   function renderTable(data) {
@@ -137,45 +168,60 @@
     positionPopup(row);
     popup.setAttribute("aria-hidden", "false");
 
+    // 加载历史数据
     const cached = cache.get(code);
     if (cached) {
       renderTable(cached);
-      positionPopup(row);
-      return;
+    } else if (loadingCode !== code) {
+      loadingCode = code;
+      fetch(`/api/history?code=${encodeURIComponent(code)}&days=${DAYS}`, { cache: "no-store" })
+        .then(async (res) => {
+          if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), { status: res.status });
+          return res.json();
+        })
+        .then((data) => {
+          cache.set(code, data);
+          if (activeCode === code && activeRow) {
+            renderTable(data);
+            positionPopup(activeRow);
+          }
+        })
+        .catch((err) => {
+          if (activeCode !== code) return;
+          const msg = err?.status === 404 ? "历史接口未就绪，请重启服务（./restart.sh）" : "加载失败，请稍后重试";
+          bodyEl.innerHTML = `<div class="history-loading history-error">${msg}</div>`;
+        })
+        .finally(() => {
+          if (loadingCode === code) loadingCode = null;
+        });
     }
 
-    if (loadingCode === code) return;
-    loadingCode = code;
-
-    fetch(`/api/history?code=${encodeURIComponent(code)}&days=${DAYS}`, {
-      cache: "no-store",
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const err = new Error(`HTTP ${res.status}`);
-          err.status = res.status;
-          throw err;
-        }
-        return res.json();
-      })
-      .then((data) => {
-        cache.set(code, data);
-        if (activeCode === code && activeRow) {
-          renderTable(data);
-          positionPopup(activeRow);
-        }
-      })
-      .catch((err) => {
-        if (activeCode !== code) return;
-        const msg =
-          err?.status === 404
-            ? "历史接口未就绪，请重启服务（./restart.sh）"
-            : "加载失败，请稍后重试";
-        bodyEl.innerHTML = `<div class="history-loading history-error">${msg}</div>`;
-      })
-      .finally(() => {
-        if (loadingCode === code) loadingCode = null;
-      });
+    // 加载深度分析
+    const cachedAnalysis = analysisCache.get(code);
+    if (cachedAnalysis) {
+      renderAnalysis(cachedAnalysis);
+      positionPopup(row);
+    } else if (loadingAnalysisCode !== code) {
+      loadingAnalysisCode = code;
+      fetch(`/api/analyze?code=${encodeURIComponent(code)}`, { cache: "no-store" })
+        .then(async (res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
+        .then((data) => {
+          analysisCache.set(code, data);
+          if (activeCode === code && activeRow) {
+            renderAnalysis(data);
+            positionPopup(activeRow);
+          }
+        })
+        .catch(() => {
+          if (activeCode === code) renderAnalysis(null);
+        })
+        .finally(() => {
+          if (loadingAnalysisCode === code) loadingAnalysisCode = null;
+        });
+    }
   }
 
   function hidePopup() {

@@ -12,6 +12,7 @@ import httpx
 
 from backend.config import REFRESH_INTERVAL_SEC
 from backend.fetcher import fetch_quotes, get_provider_stats
+from backend.analyzer import quick_analyze
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +51,13 @@ class QuoteCache:
 
     async def snapshot(self) -> dict[str, Any]:
         async with self._lock:
+            items: list[dict[str, Any]] = []
+            for row in self.items:
+                new_row = dict(row)
+                new_row["analysis"] = quick_analyze(row)
+                items.append(new_row)
             out = {
-                "items": list(self.items),
+                "items": items,
                 "updated_at": self.updated_at.isoformat() if self.updated_at else None,
                 "last_error": self.last_error,
                 "last_provider": self.last_provider,

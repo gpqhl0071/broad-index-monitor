@@ -15,7 +15,9 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.cache import QuoteCache, run_refresh_loop
 from backend.history import fetch_history
+from backend.analyzer import deep_analyze
 from backend.weather import fetch_weather, resolve_coords_from_ip
+from backend.config import QUOTE_ITEMS
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 cache = QuoteCache()
@@ -56,6 +58,18 @@ async def history(code: str = Query(..., min_length=6, max_length=6), days: int 
         raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e)) from e
+
+
+@app.get("/api/analyze")
+async def analyze(code: str = Query(..., min_length=6, max_length=6)):
+    item = next((q for q in QUOTE_ITEMS if q.code == code), None)
+    if not item:
+        raise HTTPException(status_code=404, detail="未知代码")
+    snap = await cache.snapshot()
+    quote = next((r for r in snap["items"] if r["code"] == code), None)
+    if not quote:
+        raise HTTPException(status_code=404, detail="暂无行情数据")
+    return deep_analyze(code, quote)
 
 
 @app.get("/api/health")
